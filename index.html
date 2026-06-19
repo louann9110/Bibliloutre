@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bibliloutre — écrire et publier ses livres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand:#16a9a6;          /* turquoise Bibliloutre */
+    --brand-deep:#0e807d;
+    --ink:#173230;            /* encre teal foncé */
+    --ink-soft:#3f5b59;
+    --muted:#789593;
+    --ground:#f0f7f6;         /* fond clair menthe */
+    --card:#ffffff;
+    --line:rgba(23,50,48,.12);
+    --line-strong:rgba(23,50,48,.20);
+    --done:#5a9c4f;           /* vert : terminé/publié */
+    --highlight:#ffd95e;      /* SIGNATURE : ce que Biblou voit */
+    --highlight-soft:#fff3cc;
+    --danger:#c0584a;
+    --font-display:'Fraunces',Georgia,serif;
+    --font-body:'Newsreader',Georgia,serif;
+    --font-ui:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --shadow:0 1px 2px rgba(23,50,48,.06),0 10px 30px rgba(23,50,48,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:var(--font-ui);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+    background:#dcebe9;background-image:radial-gradient(circle at 50% -10%, #e6f4f2, #cfe6e3 70%);}
+  button{font-family:inherit;cursor:pointer;color:inherit}
+  input,textarea,select{font-family:inherit}
+  ::selection{background:var(--highlight-soft)}
+
+  .phone{position:relative;max-width:430px;margin:26px auto;height:calc(100vh - 52px);max-height:920px;
+    background:var(--ground);border-radius:36px;box-shadow:var(--shadow),0 0 0 9px #11302e,0 0 0 11px #25524f;
+    overflow:hidden;display:flex;flex-direction:column;}
+  .appbar{flex:none;padding:18px 20px 12px;background:var(--ground);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px;z-index:5}
+  .appbar .back{width:30px;height:30px;border:none;background:rgba(23,50,48,.06);border-radius:9px;font-size:18px;display:flex;align-items:center;justify-content:center;flex:none}
+  .appbar .mark{width:34px;height:34px;border-radius:11px;object-fit:cover;flex:none;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .appbar h1{font-family:var(--font-display);font-weight:500;font-size:23px;margin:0;letter-spacing:-.4px;line-height:1.1;flex:1}
+  .appbar h1 .em{color:var(--brand-deep)}
+
+  .screen{flex:1;overflow-y:auto;padding:18px 20px 26px}
+  .screen::-webkit-scrollbar{width:0}
+
+  .tabbar{flex:none;display:grid;grid-template-columns:repeat(5,1fr);background:var(--card);border-top:1px solid var(--line);padding:7px 6px calc(7px + env(safe-area-inset-bottom))}
+  .tab{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:12px;color:var(--muted);font-size:10px;font-weight:500}
+  .tab svg{width:23px;height:23px}
+  .tab .otter{width:25px;height:25px;border-radius:8px;object-fit:cover;filter:grayscale(.6) opacity(.7)}
+  .tab.active{color:var(--brand-deep)}
+  .tab.active .otter{filter:none;box-shadow:0 0 0 2px var(--brand)}
+
+  .sub{color:var(--muted);font-size:13.5px;margin:-2px 0 16px}
+  .sec{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:9px 0;font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink-soft);text-transform:uppercase}
+  .sec .chev{transition:transform .2s;font-size:14px;color:var(--brand-deep)}
+  .sec.collapsed .chev{transform:rotate(-90deg)}
+  .sec-rule{height:1px;background:var(--line);margin-bottom:6px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 16px;border-radius:11px;border:1px solid var(--line-strong);background:var(--card);font-size:13.5px;font-weight:600;transition:transform .08s,background .15s}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.primary:active{background:var(--brand-deep)}
+  .btn.green{background:var(--done);border-color:var(--done);color:#fff}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--brand-deep)}
+  .btn.danger{color:var(--danger);border-color:transparent;background:transparent}
+  .btn.block{width:100%}
+  .btn.sm{padding:7px 11px;font-size:12.5px}
+  .btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+  /* genres */
+  .chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin:0 -2px 6px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;border:1px solid var(--line-strong);background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;color:var(--ink-soft);white-space:nowrap}
+  .chip.active{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+
+  /* covers */
+  .covers{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:6px 0}
+  .cover-card{background:none;border:none;padding:0;text-align:left}
+  .cover-card .thumb{aspect-ratio:3/4;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:42px;position:relative;box-shadow:var(--shadow);background-size:cover;background-position:center;transition:transform .12s}
+  .cover-card:active .thumb{transform:scale(.97)}
+  .cover-card .badge{position:absolute;bottom:8px;left:8px;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:20px;background:rgba(255,255,255,.92);color:var(--ink-soft)}
+  .cover-card .badge.published{background:var(--done);color:#fff}
+  .cover-card .ttl{font-family:var(--font-display);font-size:15.5px;margin:8px 0 1px;line-height:1.15}
+  .cover-card .ch{font-size:11.5px;color:var(--muted)}
+
+  .empty{border:1.5px dashed var(--line-strong);border-radius:14px;padding:22px;text-align:center;color:var(--muted);font-size:13.5px}
+  .empty p{margin:0 0 12px}
+
+  .hrow{display:flex;gap:13px;overflow-x:auto;padding:2px 0 8px;margin:0 -4px;scrollbar-width:none}
+  .hrow::-webkit-scrollbar{display:none}
+  .hcard{flex:none;width:104px;background:none;border:none;padding:0 4px;text-align:left}
+  .hcard .thumb{width:104px;aspect-ratio:3/4;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:var(--shadow);background-size:cover;background-position:center}
+  .hcard .ttl{font-family:var(--font-display);font-size:13.5px;margin-top:7px;line-height:1.1}
+  .hcard .by{font-size:11px;color:var(--muted)}
+  .hcard .prog{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+  .hcard .prog>span{display:block;height:100%;background:var(--brand)}
+
+  /* book detail */
+  .bd-top{display:flex;gap:16px;margin-bottom:8px}
+  .bd-cover{width:108px;aspect-ratio:3/4;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:46px;flex:none;box-shadow:var(--shadow);background-size:cover;background-position:center}
+  .bd-info{flex:1;min-width:0}
+  .bd-info h2{font-family:var(--font-display);font-weight:500;font-size:22px;margin:2px 0 3px;line-height:1.1}
+  .bd-info .st{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .bd-actions{display:flex;flex-direction:column;gap:8px}
+  .tabs{display:flex;gap:18px;border-bottom:1px solid var(--line);margin:20px 0 16px}
+  .tabx{background:none;border:none;padding:9px 0;font-size:13.5px;color:var(--muted);border-bottom:2px solid transparent;font-weight:600}
+  .tabx.active{color:var(--ink);border-bottom-color:var(--brand)}
+
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .field textarea,.field input,.field select{width:100%;border:1px solid var(--line-strong);border-radius:11px;padding:11px 13px;background:#fff;font-family:var(--font-body);font-size:16px;line-height:1.5;resize:vertical;color:var(--ink)}
+  .field select{font-family:var(--font-ui);font-size:14px}
+  .field textarea:focus,.field input:focus,.field select:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:transparent}
+
+  .chap{display:flex;align-items:center;gap:12px;padding:13px 14px;background:#fff;border:1px solid var(--line);border-radius:13px;margin-bottom:9px;width:100%;text-align:left}
+  .chap .num{font-family:var(--font-display);font-size:18px;color:var(--brand-deep);width:22px}
+  .chap .t{flex:1;min-width:0}
+  .chap .t .ttl{font-family:var(--font-display);font-size:15.5px}
+  .chap .t .w{font-size:11.5px;color:var(--muted)}
+  .chap .pill{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--done);border:1px solid var(--done);border-radius:20px;padding:2px 6px;margin-left:6px}
+  .chap .trash{background:none;border:none;color:var(--muted);font-size:17px;padding:4px}
+  .chap .go{color:var(--muted);font-size:18px}
+
+  .char{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:9px}
+  .char .top{display:flex;align-items:center}
+  .char .nm{font-family:var(--font-display);font-size:16px;flex:1}
+  .char .role{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--brand-deep);margin-left:7px}
+  .char .ds{font-family:var(--font-body);font-size:14.5px;color:var(--ink-soft);margin-top:4px}
+  .char .acts{display:flex;gap:4px}
+  .char .acts button{background:none;border:none;font-size:15px;color:var(--muted);padding:3px 5px}
+
+  /* image strip */
+  .imgs{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0}
+  .imgs .im{position:relative;width:74px;height:74px;border-radius:10px;background-size:cover;background-position:center;box-shadow:var(--shadow)}
+  .imgs .im button{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:var(--danger);color:#fff;border:2px solid #fff;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
+  .upload{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border:1px dashed var(--line-strong);border-radius:11px;font-size:13px;color:var(--brand-deep);font-weight:600;cursor:pointer}
+  .upload input{display:none}
+
+  /* editor */
+  .ed-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .ed-head input{flex:1;font-family:var(--font-display);font-weight:500;font-size:20px;border:none;background:none;border-bottom:1px dashed transparent;color:var(--ink);padding:2px 0}
+  .ed-head input:focus{outline:none;border-bottom-color:var(--brand)}
+  .ed-meta{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin-bottom:10px;flex-wrap:wrap}
+  .ed-meta .nav{display:flex;gap:6px;margin-left:auto}
+  .ed-meta .nav button{border:1px solid var(--line-strong);background:#fff;border-radius:8px;padding:4px 9px;font-size:13px}
+  .ed-meta .nav button:disabled{opacity:.4}
+  .ed-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+  .ed-bar .selstate{font-size:12px;color:var(--muted);width:100%}
+  .ed-bar .selstate b{color:var(--brand-deep)}
+  .ed-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:grid;grid-template-columns:38px 1fr}
+  .gutter{font-family:var(--font-body);font-size:16px;line-height:1.85;text-align:right;padding:16px 6px 16px 0;color:var(--muted);background:#fafdfc;border-right:1px solid var(--line);white-space:pre;overflow:hidden;user-select:none}
+  .ed-area{font-family:var(--font-body);font-size:16px;line-height:1.85;border:none;outline:none;resize:none;padding:16px;background:transparent;color:var(--ink);width:100%;min-height:44vh}
+
+  /* reader */
+  .reader h2{font-family:var(--font-display);font-weight:500;font-size:24px;margin:0 0 2px}
+  .reader .by{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .reader .smry{font-family:var(--font-body);font-style:italic;color:var(--ink-soft);font-size:15px;margin-bottom:18px}
+  .reader .prose{font-family:var(--font-body);font-size:17px;line-height:1.75}
+  .reader .prose h3{font-family:var(--font-display);font-weight:500;font-size:18px;margin:1.3em 0 .3em}
+  .reader .prose p{margin:0 0 1em}
+  .reader .prose img{max-width:100%;border-radius:12px;margin:.6em 0}
+
+  /* profile */
+  .prof-hd{display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px 0 18px}
+  .prof-hd img{width:96px;height:96px;border-radius:26px;object-fit:cover;box-shadow:var(--shadow)}
+  .prof-hd .nm{font-family:var(--font-display);font-size:22px;margin-top:12px}
+  .prof-hd .bio{color:var(--muted);font-size:13px}
+  .stat-row{display:flex;gap:12px;margin-bottom:18px}
+  .stat{flex:1;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+  .stat .n{font-family:var(--font-display);font-size:24px;color:var(--brand-deep)}
+  .stat .l{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .promise{background:linear-gradient(180deg,var(--highlight-soft),#fff);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;gap:12px;align-items:flex-start}
+  .promise img{width:42px;height:42px;border-radius:12px;flex:none}
+  .promise .tx{font-size:13.5px;color:var(--ink-soft);line-height:1.5}
+  .promise .tx b{color:var(--ink)}
+
+  /* Biblou chat */
+  .scrim{position:absolute;inset:0;background:rgba(15,40,38,.42);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .biblou{position:absolute;left:0;right:0;bottom:0;height:90%;background:var(--ground);border-radius:24px 24px 0 0;transform:translateY(103%);transition:transform .26s ease;z-index:21;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(15,40,38,.2)}
+  .biblou.open{transform:none}
+  .bb-head{flex:none;padding:15px 18px 12px;border-bottom:1px solid var(--line);display:flex;gap:11px;align-items:center}
+  .bb-head img{width:40px;height:40px;border-radius:12px;flex:none;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .bb-head .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-deep);font-weight:700}
+  .bb-head h3{font-family:var(--font-display);font-weight:500;font-size:18px;margin:1px 0 0}
+  .bb-head .x{margin-left:auto;background:none;border:none;font-size:24px;color:var(--muted)}
+  .bb-msgs{flex:1;overflow-y:auto;padding:16px 16px 6px;display:flex;flex-direction:column;gap:11px}
+  .msg{max-width:84%;font-size:14.5px;line-height:1.5;padding:10px 13px;border-radius:15px}
+  .msg.bot{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:5px;font-family:var(--font-body);font-size:15px;white-space:pre-wrap}
+  .msg.me{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:5px;white-space:pre-wrap}
+  .msg .pj{display:block;margin-top:7px;padding:7px 9px;background:var(--highlight-soft);color:var(--ink);border-radius:9px;font-family:var(--font-body);font-size:13px;border-left:3px solid var(--highlight);white-space:pre-wrap;max-height:90px;overflow:auto}
+
+  .bb-foot{flex:none;border-top:1px solid var(--line);padding:10px 14px calc(12px + env(safe-area-inset-bottom));background:var(--ground)}
+  .attach-chip{display:flex;align-items:center;gap:8px;background:var(--highlight-soft);border:1px solid var(--highlight);border-radius:10px;padding:7px 10px;margin-bottom:8px;font-size:12.5px}
+  .attach-chip .lab{flex:1;color:#8a6a14;font-weight:600}
+  .attach-chip .rm{background:none;border:none;font-size:16px;color:#8a6a14}
+  .picker{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;margin-bottom:9px}
+  .picker.hidden{display:none}
+  .picker .srcs{display:flex;gap:6px;margin-bottom:10px}
+  .picker .srcs button{flex:1;border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px;font-size:12px;color:var(--muted)}
+  .picker .srcs button.active{border-color:var(--brand-deep);color:var(--ink);font-weight:700}
+  .picker .ref{display:grid;grid-template-columns:1fr 58px 58px;gap:7px;margin-bottom:9px}
+  .picker .ref.hidden,.picker .paste.hidden{display:none}
+  .picker .ref label{font-size:9px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px}
+  .picker .ref select,.picker .ref input{width:100%;padding:7px;border:1px solid var(--line-strong);border-radius:7px;font-size:12.5px}
+  .picker .paste textarea{width:100%;border:1px solid var(--line-strong);border-radius:9px;padding:9px;font-family:var(--font-body);font-size:14px;min-height:64px;margin-bottom:9px}
+  .quick{display:flex;gap:6px;overflow-x:auto;margin-bottom:9px;scrollbar-width:none}
+  .quick::-webkit-scrollbar{display:none}
+  .quick button{flex:none;border:1px solid var(--line-strong);background:#fff;border-radius:20px;padding:6px 12px;font-size:12px;color:var(--ink-soft)}
+  .bb-input{display:flex;gap:8px;align-items:flex-end}
+  .bb-input .attach{flex:none;width:40px;height:40px;border:1px solid var(--line-strong);background:#fff;border-radius:11px;font-size:18px;color:var(--brand-deep)}
+  .bb-input textarea{flex:1;border:1px solid var(--line-strong);border-radius:13px;padding:10px 12px;font-size:14.5px;resize:none;max-height:90px;min-height:40px}
+  .bb-input .send{flex:none;width:40px;height:40px;border:none;background:var(--brand);color:#fff;border-radius:11px;font-size:16px}
+  .bb-priv{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;display:flex;gap:5px;justify-content:center}
+
+  /* modal */
+  .mscrim{position:absolute;inset:0;background:rgba(15,40,38,.45);opacity:0;pointer-events:none;transition:opacity .18s;z-index:30;display:flex;align-items:center;justify-content:center;padding:24px}
+  .mscrim.open{opacity:1;pointer-events:auto}
+  .modal{background:var(--ground);border-radius:18px;width:100%;max-width:340px;padding:20px;box-shadow:var(--shadow);transform:scale(.96);transition:transform .18s}
+  .mscrim.open .modal{transform:none}
+  .modal h3{font-family:var(--font-display);font-weight:500;font-size:19px;margin:0 0 14px}
+  .modal .field{margin-bottom:13px}
+  .modal .row{display:flex;gap:9px;margin-top:6px}
+  .modal .row .btn{flex:1}
+
+  .toast{position:absolute;bottom:86px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:30px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s;z-index:40}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media(max-width:480px){
+    body{background:var(--ground);background-image:none}
+    .phone{margin:0;height:100vh;max-height:none;border-radius:0;box-shadow:none}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="phone">
+  <header class="appbar" id="appbar"></header>
+  <main class="screen" id="screen"></main>
+  <nav class="tabbar" id="tabbar"></nav>
+
+  <!-- Biblou chat -->
+  <div class="scrim" id="scrim"></div>
+  <section class="biblou" id="biblou" aria-hidden="true">
+    <div class="bb-head">
+      <img id="bbLogo" alt="Biblou">
+      <div><span class="k">Biblou · confidentiel</span><h3>Votre assistant d'écriture</h3></div>
+      <button class="x" id="bbClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="bb-msgs" id="bbMsgs"></div>
+    <div class="bb-foot">
+      <div id="attachZone"></div>
+      <div class="picker hidden" id="picker">
+        <div class="srcs" id="pSrcs">
+          <button data-src="selection" class="active">Sélection</button>
+          <button data-src="reference">Par chapitre</button>
+          <button data-src="paste">Coller</button>
+        </div>
+        <div class="ref hidden" id="pRef">
+          <div><label>Chapitre</label><select id="pCh"></select></div>
+          <div><label>De</label><input id="pFrom" type="number" min="1" value="1"></div>
+          <div><label>à</label><input id="pTo" type="number" min="1" value="5"></div>
+        </div>
+        <div class="paste hidden" id="pPaste"><textarea id="pTxt" placeholder="Collez le passage à confier…"></textarea></div>
+        <button class="btn primary block sm" id="pAdd">Joindre ce passage</button>
+      </div>
+      <div class="quick" id="quick">
+        <button data-q="Donne-moi des idées pour avancer.">✨ Des idées</button>
+        <button data-q="Corrige ce passage.">Corriger</button>
+        <button data-q="Continue dans mon style.">Continuer</button>
+        <button data-q="Décris ce lieu plus en détail.">Décrire un lieu</button>
+      </div>
+      <div class="bb-input">
+        <button class="attach" id="attachBtn" title="Joindre un passage">📎</button>
+        <textarea id="bbText" rows="1" placeholder="Écrivez à Biblou…"></textarea>
+        <button class="send" id="bbSend" aria-label="Envoyer">➤</button>
+      </div>
+      <div class="bb-priv">🔒 Biblou ne voit que le passage joint et vos messages.</div>
+    </div>
+  </section>
+
+  <!-- modal générique -->
+  <div class="mscrim" id="mscrim"><div class="modal" id="modal"></div></div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const LOGO="data:image/png;base64,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";
+const IC={
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4z"/><path d="M20 4h-7a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20z"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>'
+};
+const GENRES=['Roman','Fantastique','Science-fiction','Policier','Romance','Aventure','Jeunesse','Poésie','Historique'];
+const PALETTE=['#bfe3df','#cfe0df','#d6dce8','#e3dce8','#d8e3d2','#f3d8cc','#dce8e6'];
+let ci=0; const pickColor=()=>PALETTE[(ci++)%PALETTE.length];
+
+const state={
+  view:'accueil', bookId:null, chapterId:null, tab:'chapters',
+  collapse:{encours:false,fini:false}, search:'', genre:'Tous',
+  selection:{text:''},
+  bb:{open:false, src:'selection', pickerOpen:false, attached:null, messages:[]},
+  books:[
+    {id:'b1',title:'Les Marées de Sève',author:'Vous',status:'draft',genre:'Fantastique',cover:'#cfe0df',coverImg:null,emoji:'🌊',
+     summary:"Dans un port où la mer se retire pour ne jamais revenir, une cartographe trace les côtes d'un océan qui disparaît.",
+     characters:[{name:'Inès Marteau',role:'principal',desc:"Cartographe obstinée, elle refuse d'effacer l'eau qui s'en va de ses cartes."},{name:'Le vieux Sorre',role:'secondaire',desc:"Ancien gardien de phare, il connaît les marées mieux que quiconque."}],
+     chapters:[
+       {id:'c1',title:'Le port sans eau',published:true,images:[],content:"La mer avait reculé pendant la nuit.\nInès le sut avant même d'ouvrir les volets, à l'odeur du sel qui manquait.\nElle descendit jusqu'au quai.\nLà où dansaient les barques, il n'y avait plus que de la vase et des coquillages ouverts."},
+       {id:'c2',title:'La carte qui ment',published:false,images:[],content:"Sur le mur de l'atelier, la carte montrait encore un océan plein.\nInès la regarda longtemps.\nFallait-il mentir au papier, ou mentir à la mer ?"}
+     ]},
+    {id:'b2',title:'Café Mémoire',author:'Vous',status:'done',genre:'Romance',cover:'#f3d8cc',coverImg:null,emoji:'☕',
+     summary:"Un café où chaque tasse rend un souvenir oublié. Le patron, lui, a tout oublié sauf une chose.",
+     characters:[{name:'Téo',role:'principal',desc:"Barista qui sert des souvenirs sans jamais boire les siens."}],
+     chapters:[
+       {id:'c1',title:'Première tasse',published:false,images:[],content:"La clochette sonna.\nTéo leva les yeux : une femme qu'il ne reconnaissait pas, et qui pourtant savait son nom."},
+       {id:'c2',title:'Le ticket de caisse',published:false,images:[],content:"Sur le ticket, une date.\nCelle d'un jour qu'il avait choisi d'effacer."},
+       {id:'c3',title:'Fermeture',published:false,images:[],content:"À minuit, Téo retourna la pancarte.\nIl restait une tasse, tiède, qu'il n'avait servie à personne."}
+     ]}
+  ],
+  community:[
+    {id:'p1',title:'La Neuvième Rue',author:'Camille Royer',status:'published',genre:'Policier',cover:'#d6dce8',coverImg:null,emoji:'🌧️',summary:"Une enquêtrice insomniaque arpente une ville qui change de plan chaque nuit.",chapters:[{id:'c1',title:'Plan nocturne',published:true,images:[],content:"La rue n'était pas là hier.\nL'inspectrice vérifia trois fois le numéro."}],progress:.4},
+    {id:'p2',title:'Graines de fer',author:'Jonas Adé',status:'published',genre:'Science-fiction',cover:'#d8e3d2',coverImg:null,emoji:'🌱',summary:"Dans un futur agricole, un botaniste cultive la dernière plante capable de pousser sur le métal.",chapters:[{id:'c1',title:'La serre',published:true,images:[],content:"Sous la verrière rouillée, une tige verte, impossible, têtue."}],progress:0},
+    {id:'p3',title:'Lettres à personne',author:'Sira N.',status:'published',genre:'Roman',cover:'#e3dce8',coverImg:null,emoji:'✉️',summary:"Un facteur garde les lettres jamais réclamées et finit par y répondre.",chapters:[{id:'c1',title:'Boîte 12',published:true,images:[],content:"La boîte douze débordait encore.\nIl en prit une, au hasard, et l'ouvrit."}],progress:.75},
+    {id:'p4',title:'Le Royaume sous la Mousse',author:'Lou Vernay',status:'published',genre:'Fantastique',cover:'#d8e3d2',coverImg:null,emoji:'🍄',summary:"Sous la forêt, un royaume minuscule attend qu'on le remarque enfin.",chapters:[{id:'c1',title:'La trappe',published:true,images:[],content:"Le champignon n'était pas un champignon : c'était une porte."}],progress:0},
+    {id:'p5',title:"Cap sur l'île Renversée",author:'Marin Doré',status:'published',genre:'Aventure',cover:'#bfe3df',coverImg:null,emoji:'⛵',summary:"Une carte à l'envers mène toujours quelque part — encore faut-il oser la suivre.",chapters:[{id:'c1',title:'Le départ',published:true,images:[],content:"On largua les amarres avant que le doute ne remonte à bord."}],progress:0},
+    {id:'p6',title:'Lottie et le Hibou Bleu',author:'Ana P.',status:'published',genre:'Jeunesse',cover:'#e3dce8',coverImg:null,emoji:'🦉',summary:"Chaque nuit, un hibou bleu emmène Lottie là où vont les rêves perdus.",chapters:[{id:'c1',title:'La première plume',published:true,images:[],content:"La plume était bleue, et froide, et elle chantait tout bas."}],progress:0}
+  ],
+  reading:['p1','p3']
+};
+
+const $=s=>document.querySelector(s);
+const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const wc=t=>t.trim()?t.trim().split(/\s+/).length:0;
+const bookWords=b=>b.chapters.reduce((n,c)=>n+wc(c.content),0);
+const getBook=id=>state.books.find(b=>b.id===id)||state.community.find(b=>b.id===id);
+const stLabel=s=>({draft:'En cours',done:'Terminé',published:'Publié'}[s]);
+let toastT; function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2000);}
+const coverBg=b=>b.coverImg?`background-image:url(${b.coverImg})`:`background:${b.cover}`;
+const coverInner=b=>b.coverImg?'':b.emoji;
+
+/* ---------- modal ---------- */
+function modal(title,fields,onOk,okLabel){
+  okLabel=okLabel||'Valider';
+  const body=fields.map(f=>{
+    if(f.type==='select')return `<div class="field"><label>${f.label}</label><select data-k="${f.key}">${f.options.map(o=>`<option ${o===f.value?'selected':''}>${o}</option>`).join('')}</select></div>`;
+    if(f.type==='textarea')return `<div class="field"><label>${f.label}</label><textarea data-k="${f.key}" rows="3">${esc(f.value||'')}</textarea></div>`;
+    if(f.type==='message')return `<p style="margin:0 0 14px;color:var(--ink-soft);font-size:14px">${esc(f.label)}</p>`;
+    return `<div class="field"><label>${f.label}</label><input data-k="${f.key}" value="${esc(f.value||'')}"></div>`;
+  }).join('');
+  $('#modal').innerHTML=`<h3>${esc(title)}</h3>${body}<div class="row"><button class="btn" data-mcancel>Annuler</button><button class="btn ${okLabel==='Supprimer'?'danger':'primary'}" data-mok>${okLabel}</button></div>`;
+  $('#mscrim').classList.add('open');
+  const first=$('#modal [data-k]'); if(first)setTimeout(()=>first.focus(),50);
+  $('#modal').onclick=e=>{
+    if(e.target.closest('[data-mcancel]'))return closeModal();
+    if(e.target.closest('[data-mok]')){
+      const vals={};$('#modal').querySelectorAll('[data-k]').forEach(el=>vals[el.dataset.k]=el.value.trim());
+      closeModal();onOk(vals);
+    }
+  };
+}
+function closeModal(){$('#mscrim').classList.remove('open');}
+$('#mscrim').addEventListener('click',e=>{if(e.target.id==='mscrim')closeModal();});
+
+/* ---------- nav ---------- */
+function go(view,opts={}){
+  state.view=view;
+  if(opts.bookId!==undefined)state.bookId=opts.bookId;
+  if(opts.chapterId!==undefined)state.chapterId=opts.chapterId;
+  if(view!=='search')state.search='';
+  render();$('#screen').scrollTo(0,0);
+}
+function activeTab(){
+  if(state.bb.open)return'biblou';
+  if(['library','book','editor'].includes(state.view))return'library';
+  if(['accueil','reader'].includes(state.view))return'accueil';
+  return state.view;
+}
+function appbar(){
+  const v=state.view;let back='',title='';
+  if(v==='accueil')title=`<img class="mark" src="${LOGO}" alt=""><h1>Bibli<span class="em">loutre</span></h1>`;
+  else if(v==='library')title='<h1>Mes livres</h1>';
+  else if(v==='search')title='<h1>Recherche</h1>';
+  else if(v==='profile')title='<h1>Profil</h1>';
+  else if(v==='book'){back='library';title='<h1>Mes livres</h1>';}
+  else if(v==='editor'){back='book';title='<h1>Écrire</h1>';}
+  else if(v==='reader'){back='accueil';title='<h1>Lecture</h1>';}
+  $('#appbar').innerHTML=(back?`<button class="back" data-back="${back}">‹</button>`:'')+title;
+}
+function tabbar(){
+  const a=activeTab();
+  const t=(id,ic,l)=>`<button class="tab ${a===id?'active':''}" data-tab="${id}">${ic}<span>${l}</span></button>`;
+  $('#tabbar').innerHTML=t('accueil',IC.home,'Accueil')+t('biblou',`<img class="otter" src="${LOGO}" alt="">`,'Biblou')+t('search',IC.search,'Recherche')+t('library',IC.book,'Mes livres')+t('profile',IC.user,'Profil');
+}
+function render(){
+  appbar();tabbar();const v=state.view,s=$('#screen');
+  if(v==='accueil')s.innerHTML=accueil();
+  else if(v==='library')s.innerHTML=library();
+  else if(v==='book')s.innerHTML=book();
+  else if(v==='editor'){s.innerHTML=editor();bindEditor();}
+  else if(v==='search')s.innerHTML=search();
+  else if(v==='profile')s.innerHTML=profile();
+  else if(v==='reader')s.innerHTML=reader();
+}
+
+function coverCard(b,opts={}){
+  const ch=b.chapters.length;
+  const badge=opts.community?'':`<span class="badge ${b.status}">${stLabel(b.status)}</span>`;
+  const sub=opts.community?esc(b.author):`${esc(b.genre)} · ${ch} chap.`;
+  return `<button class="cover-card" data-open="${b.id}" data-c="${opts.community?1:0}">
+    <div class="thumb" style="${coverBg(b)}">${coverInner(b)}${badge}</div>
+    <div class="ttl">${esc(b.title)}</div><div class="ch">${sub}</div></button>`;
+}
+
+function accueil(){
+  const reading=state.reading.map(getBook).filter(Boolean);
+  const readRow=reading.length?`<button class="sec" style="cursor:default">Reprendre ma lecture</button>
+    <div class="hrow">${reading.map(b=>`<button class="hcard" data-open="${b.id}" data-c="1">
+      <div class="thumb" style="${coverBg(b)}">${coverInner(b)}</div>
+      <div class="ttl">${esc(b.title)}</div><div class="by">${esc(b.author)}</div>
+      <div class="prog"><span style="width:${Math.round((b.progress||0)*100)}%"></span></div></button>`).join('')}</div>`:'';
+  const filt=state.genre==='Tous'?state.community:state.community.filter(b=>b.genre===state.genre);
+  const chips=['Tous',...GENRES].map(g=>`<button class="chip ${state.genre===g?'active':''}" data-genre="${g}">${g}</button>`).join('');
+  return `${readRow}
+    <button class="sec" style="cursor:default">Genres</button>
+    <div class="chips">${chips}</div>
+    <button class="sec" style="cursor:default">À découvrir${state.genre==='Tous'?'':' · '+esc(state.genre)}</button>
+    <div class="sec-rule"></div>
+    ${filt.length?`<div class="covers">${filt.map(b=>coverCard(b,{community:true})).join('')}</div>`:`<div class="empty"><p>Aucun livre publié dans ce genre pour l'instant.</p></div>`}`;
+}
+
+function library(){
+  const drafts=state.books.filter(b=>b.status==='draft');
+  const fini=state.books.filter(b=>b.status!=='draft');
+  const block=(key,label,arr)=>{
+    const col=state.collapse[key];
+    return `<button class="sec ${col?'collapsed':''}" data-sec="${key}"><span class="chev">▾</span>${label} · ${arr.length}</button>
+      <div class="sec-rule"></div>
+      ${col?'':(arr.length?`<div class="covers">${arr.map(b=>coverCard(b)).join('')}</div>`:`<div class="empty"><p>Rien ici pour l'instant.</p></div>`)}`;
+  };
+  return `<button class="btn primary block" id="newBook" style="margin-bottom:16px">＋ Nouveau livre</button>
+    ${block('encours','En cours',drafts)}<div style="height:14px"></div>${block('fini','Fini',fini)}`;
+}
+
+function book(){
+  const b=getBook(state.bookId),tab=state.tab;
+  let act=`<button class="btn primary block" data-edit-first>✎ Continuer à écrire</button>`;
+  if(b.status==='draft')act+=`<button class="btn green block" data-done>Marquer comme terminé</button>`;
+  if(b.status==='done')act+=`<button class="btn block" data-undone>Repasser en cours</button><button class="btn green block" data-publish>Publier sur Bibliloutre</button>`;
+  if(b.status==='published')act+=`<button class="btn block" data-unpublish>Dépublier</button>`;
+  const body=tab==='chapters'?chapters(b):tab==='sheet'?sheet(b):chars(b);
+  return `<div class="bd-top">
+      <div class="bd-cover" style="${coverBg(b)}">${coverInner(b)}</div>
+      <div class="bd-info"><h2>${esc(b.title)}</h2>
+        <div class="st">${esc(b.author)} · ${esc(b.genre)} · ${stLabel(b.status)} · ${bookWords(b)} mots</div>
+        <div class="bd-actions">${act}</div></div></div>
+    <div class="tabs">
+      <button class="tabx ${tab==='chapters'?'active':''}" data-bt="chapters">Chapitres</button>
+      <button class="tabx ${tab==='sheet'?'active':''}" data-bt="sheet">Fiche</button>
+      <button class="tabx ${tab==='characters'?'active':''}" data-bt="characters">Personnages</button>
+    </div>${body}`;
+}
+function chapters(b){
+  const rows=b.chapters.map((c,i)=>`<div class="chap">
+    <div class="num">${i+1}</div>
+    <button class="t" data-chapter="${c.id}" style="background:none;border:none;text-align:left;cursor:pointer">
+      <div class="ttl">${esc(c.title)}${c.published?'<span class="pill">publié</span>':''}</div>
+      <div class="w">${wc(c.content)} mots · continuer / modifier</div></button>
+    <button class="trash" data-delchap="${c.id}" aria-label="Supprimer">🗑</button>
+    <span class="go">›</span></div>`).join('');
+  return `${rows||'<div class="empty"><p>Pas encore de chapitre.</p></div>'}
+    <button class="btn block" id="addChap" style="margin-top:4px">＋ Ajouter un chapitre</button>`;
+}
+function sheet(b){
+  const cover=b.coverImg?`<div class="imgs"><div class="im" style="background-image:url(${b.coverImg})"><button data-delcover aria-label="Retirer">×</button></div></div>`:'';
+  return `<div class="field"><label>Titre du livre</label><input data-sh="title" value="${esc(b.title)}"></div>
+    <div class="field"><label>Genre</label><select data-sh="genre">${GENRES.map(g=>`<option ${g===b.genre?'selected':''}>${g}</option>`).join('')}</select></div>
+    <div class="field"><label>Résumé</label><textarea data-sh="summary" rows="4">${esc(b.summary)}</textarea></div>
+    <div class="field"><label>Couverture</label>
+      ${cover}
+      <label class="upload">📷 Importer une image<input type="file" accept="image/*" id="coverInput"></label>
+      <span style="margin-left:8px;font-size:12px;color:var(--muted)">ou emoji</span>
+      <input data-sh="emoji" value="${esc(b.emoji)}" maxlength="2" style="width:70px;text-align:center;font-size:22px;margin-top:8px">
+    </div>
+    <button class="btn primary" id="saveSheet">Enregistrer la fiche</button>`;
+}
+function chars(b){
+  const c=b.characters.map((c,i)=>`<div class="char"><div class="top">
+      <div class="nm">${esc(c.name)}<span class="role">${esc(c.role)}</span></div>
+      <div class="acts"><button data-editchar="${i}" aria-label="Modifier">✎</button><button data-delchar="${i}" aria-label="Supprimer">🗑</button></div>
+    </div><div class="ds">${esc(c.desc)}</div></div>`).join('');
+  return `${c||'<div class="empty"><p>Aucune fiche personnage.</p></div>'}
+    <button class="btn block" id="addChar" style="margin-top:4px">＋ Ajouter un personnage</button>`;
+}
+
+function editor(){
+  const b=getBook(state.bookId);
+  if(!b.chapters.length)return `<div class="empty"><p>Ce livre n'a plus de chapitre.</p><button class="btn primary" id="addChap">＋ Ajouter un chapitre</button></div>`;
+  let idx=b.chapters.findIndex(x=>x.id===state.chapterId); if(idx<0)idx=0;
+  const c=b.chapters[idx];state.chapterId=c.id;
+  const imgs=c.images.map((src,i)=>`<div class="im" style="background-image:url(${src})"><button data-delimg="${i}" aria-label="Retirer">×</button></div>`).join('');
+  return `<div class="ed-head"><input id="chTitle" value="${esc(c.title)}" aria-label="Titre du chapitre"></div>
+    <div class="ed-meta">
+      <span>Chapitre <b>${idx+1}</b> / ${b.chapters.length}</span>
+      <span>· <span id="chWords">${wc(c.content)}</span> mots</span>
+      <span>· ${bookWords(b)} mots au total</span>
+      <span class="nav"><button data-nav="prev" ${idx===0?'disabled':''}>‹ Préc.</button><button data-nav="next" ${idx===b.chapters.length-1?'disabled':''}>Suiv. ›</button></span>
+    </div>
+    <div class="ed-bar">
+      <span class="selstate" id="selState">Aucune sélection</span>
+      <button class="btn sm ${c.published?'green':''}" data-pubchap>${c.published?'✓ Chapitre publié — dépublier':'Publier ce chapitre'}</button>
+      <button class="btn primary sm" id="askBiblou">Demander à Biblou</button>
+    </div>
+    <label class="upload">🖼 Importer des images<input type="file" accept="image/*" multiple id="chImgInput"></label>
+    ${imgs?`<div class="imgs">${imgs}</div>`:''}
+    <div class="ed-wrap" style="margin-top:10px"><div class="gutter" id="gutter"></div>
+      <textarea class="ed-area" id="ed" spellcheck="true" placeholder="Écrivez ici…">${esc(c.content)}</textarea></div>`;
+}
+function bindEditor(){
+  const b=getBook(state.bookId),c=b.chapters.find(x=>x.id===state.chapterId);if(!c)return;
+  const ta=$('#ed');if(!ta)return;
+  const gut=()=>{const n=Math.max(ta.value.split('\n').length,1);$('#gutter').textContent=Array.from({length:n},(_,i)=>i+1).join('\n');};
+  const sel=()=>{const t=ta.value.slice(ta.selectionStart,ta.selectionEnd);state.selection={text:t};const has=t.trim().length>0;$('#selState').innerHTML=has?`<b>${t.length}</b> caractères sélectionnés`:'Aucune sélection';};
+  ta.addEventListener('input',()=>{c.content=ta.value;gut();sel();$('#chWords').textContent=wc(ta.value);});
+  ['mouseup','keyup','select'].forEach(e=>ta.addEventListener(e,sel));
+  ta.addEventListener('scroll',()=>{$('#gutter').scrollTop=ta.scrollTop;});
+  $('#chTitle').addEventListener('input',e=>{c.title=e.target.value;});
+  gut();
+}
+
+function search(){
+  const q=state.search.toLowerCase();
+  const inp=`<div class="field" style="margin-bottom:18px"><input id="searchInput" type="search" placeholder="Titre, auteur ou genre…" value="${esc(state.search)}"></div>`;
+  if(!q.trim())return inp+`<div class="empty"><p>Cherchez parmi vos livres et ceux de la communauté.</p></div>`;
+  const mine=state.books.filter(b=>(b.title+b.genre).toLowerCase().includes(q));
+  const comm=state.community.filter(b=>(b.title+b.author+b.genre).toLowerCase().includes(q));
+  let out=inp;
+  if(mine.length)out+=`<button class="sec" style="cursor:default">Mes livres</button><div class="covers">${mine.map(b=>coverCard(b)).join('')}</div>`;
+  if(comm.length)out+=`<button class="sec" style="cursor:default">Communauté</button><div class="covers">${comm.map(b=>coverCard(b,{community:true})).join('')}</div>`;
+  if(!mine.length&&!comm.length)out+=`<div class="empty"><p>Aucun livre pour « ${esc(state.search)} ».</p></div>`;
+  return out;
+}
+
+function reader(){
+  const b=getBook(state.bookId),inL=state.reading.includes(b.id);
+  const pub=b.chapters.filter(c=>c.published);
+  const prose=pub.length?pub.map(c=>`<h3>${esc(c.title)}</h3>`+c.content.split('\n').map(p=>`<p>${esc(p)}</p>`).join('')+c.images.map(s=>`<img src="${s}" alt="">`).join('')).join(''):'<p style="color:var(--muted)">Aucun chapitre publié pour le moment.</p>';
+  return `<div class="reader"><h2>${esc(b.title)}</h2><div class="by">${esc(b.author)} · ${esc(b.genre)}</div>
+    <button class="btn ${inL?'':'primary'} sm" id="toggleRead" style="margin-bottom:16px">${inL?'✓ Dans mes lectures':'＋ Ajouter à mes lectures'}</button>
+    <div class="smry">${esc(b.summary)}</div><div class="prose">${prose}</div></div>`;
+}
+
+function profile(){
+  const pub=state.books.filter(b=>b.status==='published').length;
+  const reading=state.reading.map(getBook).filter(Boolean);
+  return `<div class="prof-hd"><img src="${LOGO}" alt=""><div class="nm">Vous</div><div class="bio">Auteur·rice sur Bibliloutre</div></div>
+    <div class="stat-row">
+      <div class="stat"><div class="n">${state.books.length}</div><div class="l">Mes livres</div></div>
+      <div class="stat"><div class="n">${pub}</div><div class="l">Publiés</div></div>
+      <div class="stat"><div class="n">${reading.length}</div><div class="l">Lectures</div></div></div>
+    <button class="sec" style="cursor:default">Mes lectures en cours</button><div class="sec-rule"></div>
+    ${reading.length?`<div class="covers">${reading.map(b=>coverCard(b,{community:true})).join('')}</div>`:`<div class="empty"><p>Vous ne lisez rien pour l'instant.</p></div>`}
+    <div style="height:18px"></div>
+    <div class="promise"><img src="${LOGO}" alt=""><div class="tx"><b>Vos textes restent à vous.</b> Biblou ne lit jamais votre manuscrit. Il ne voit que le passage que vous lui joignez dans le chat.</div></div>`;
+}
+
+/* ---------- Biblou chat ---------- */
+function openBiblou(){
+  state.bb.open=true;tabbar();
+  if(!state.bb.messages.length)state.bb.messages.push({from:'bot',text:"Coucou, c'est Biblou 🦦 Posez-moi une question, ou joignez un passage (📎) pour que je travaille dessus. Je ne vois que ce que vous me confiez."});
+  if(state.view==='editor'&&state.selection.text.trim())setAttached(state.selection.text,'Sélection');
+  const b=getBook(state.bookId);
+  if(b&&$('#pCh')){$('#pCh').innerHTML=b.chapters.map((c,i)=>`<option value="${c.id}">${i+1}. ${esc(c.title)}</option>`).join('');$('#pCh').value=state.chapterId||b.chapters[0]?.id;}
+  if(!b)state.bb.src='paste';
+  syncPicker();renderAttach();renderMsgs();
+  $('#scrim').classList.add('open');$('#biblou').classList.add('open');$('#biblou').setAttribute('aria-hidden','false');
+}
+function closeBiblou(){state.bb.open=false;state.bb.pickerOpen=false;$('#picker').classList.add('hidden');tabbar();$('#scrim').classList.remove('open');$('#biblou').classList.remove('open');$('#biblou').setAttribute('aria-hidden','true');}
+function setAttached(text,label){if(text&&text.trim())state.bb.attached={text:text.trim(),label};renderAttach();}
+function renderAttach(){
+  const a=state.bb.attached;
+  $('#attachZone').innerHTML=a?`<div class="attach-chip"><span>📎</span><span class="lab">${esc(a.label)} confié à Biblou (${a.text.length} car.)</span><button class="rm" data-rmattach>×</button></div>`:'';
+}
+function renderMsgs(){
+  $('#bbMsgs').innerHTML=state.bb.messages.map(m=>`<div class="msg ${m.from==='bot'?'bot':'me'}">${esc(m.text)}${m.passage?`<span class="pj">« ${esc(m.passage.slice(0,160))}${m.passage.length>160?'…':''} »</span>`:''}</div>`).join('');
+  $('#bbMsgs').scrollTop=$('#bbMsgs').scrollHeight;
+}
+function syncPicker(){
+  const src=state.bb.src;
+  document.querySelectorAll('#pSrcs button').forEach(b=>b.classList.toggle('active',b.dataset.src===src));
+  $('#pRef').classList.toggle('hidden',src!=='reference');
+  $('#pPaste').classList.toggle('hidden',src!=='paste');
+}
+function pickerText(){
+  const src=state.bb.src;
+  if(src==='selection')return{t:state.selection.text||'',l:'Sélection'};
+  if(src==='paste')return{t:$('#pTxt').value||'',l:'Passage collé'};
+  const b=getBook(state.bookId);if(!b)return{t:'',l:''};
+  const c=b.chapters.find(x=>x.id===$('#pCh').value)||b.chapters[0];const L=(c?.content||'').split('\n');
+  const f=Math.max(1,parseInt($('#pFrom').value||1)),t=Math.min(L.length,parseInt($('#pTo').value||f));
+  return{t:L.slice(f-1,t).join('\n'),l:`Ch. « ${c.title} », lignes ${f}-${t}`};
+}
+/* Mock — brancher un vrai modèle : fetch n'envoyant QUE m.passage + le texte des messages. */
+function biblouReply(text,att){
+  const t=(text||'').toLowerCase();
+  if(/corrig|faute|orthograph|relis|fautes/.test(t)){
+    if(!att)return"Joignez-moi le passage à corriger (bouton 📎) et je vous le rends annoté.";
+    return"Sur le passage confié :\n• Variez les débuts de phrase, deux commencent pareil.\n• Une virgule clarifierait la dernière proposition.\n• Les temps verbaux sont cohérents.";
+  }
+  if(/continu|suite|prolong|avance|écris la suite/.test(t)){
+    return"Une suite possible, à reprendre à votre main :\n\nLe silence, ensuite, eut le poids d'une chose décidée. Elle posa la main à plat sur la table, comme pour vérifier que le bois, au moins, tenait bon.";
+  }
+  if(/décri|lieu|endroit|paysage|décor/.test(t)){
+    return"Pour camper le lieu sans tout dire : choisissez un seul détail qui parle (une odeur, un bruit récurrent) et laissez le reste en creux. Par exemple : « L'air sentait la pierre mouillée, même quand il faisait sec. »";
+  }
+  if(att)return`J'ai lu le passage que vous m'avez confié. Il tient bien. Voulez-vous que je le corrige, que je le prolonge, ou que je propose une variation de ton ?`;
+  return"Trois pistes pour relancer :\n• Un détail sensoriel à contre-emploi.\n• Un objet que le personnage garde sans savoir pourquoi.\n• Une phrase courte et sèche après un long paragraphe.";
+}
+function sendBiblou(text){
+  text=(text||$('#bbText').value||'').trim();
+  const att=state.bb.attached;
+  if(!text&&!att)return;
+  state.bb.messages.push({from:'me',text:text||'(passage confié)',passage:att?att.text:null});
+  $('#bbText').value='';renderMsgs();
+  setTimeout(()=>{state.bb.messages.push({from:'bot',text:biblouReply(text,att)});renderMsgs();},560);
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const tab=e.target.closest('[data-tab]');
+  if(tab){const id=tab.dataset.tab;if(id==='biblou')return openBiblou();if(state.bb.open)closeBiblou();go(id);return;}
+  const back=e.target.closest('[data-back]');if(back)return go(back.dataset.back);
+  const genre=e.target.closest('[data-genre]');if(genre){state.genre=genre.dataset.genre;render();return;}
+  const open=e.target.closest('[data-open]');
+  if(open){const id=open.dataset.open;if(open.dataset.c==='1'||state.community.some(b=>b.id===id))go('reader',{bookId:id});else{state.tab='chapters';go('book',{bookId:id});}return;}
+  const sec=e.target.closest('[data-sec]');if(sec){state.collapse[sec.dataset.sec]=!state.collapse[sec.dataset.sec];render();return;}
+  const chap=e.target.closest('[data-chapter]');if(chap)return go('editor',{chapterId:chap.dataset.chapter});
+  const bt=e.target.closest('[data-bt]');if(bt){state.tab=bt.dataset.bt;render();return;}
+
+  if(e.target.closest('#newBook'))return newBook();
+  if(e.target.closest('[data-edit-first]')){const b=getBook(state.bookId);return go('editor',{chapterId:b.chapters[0]?.id});}
+  if(e.target.closest('[data-done]')){getBook(state.bookId).status='done';render();toast('Marqué comme terminé.');return;}
+  if(e.target.closest('[data-undone]')){getBook(state.bookId).status='draft';render();toast('Repassé en cours.');return;}
+  if(e.target.closest('[data-publish]')){getBook(state.bookId).status='published';render();toast('Publié sur Bibliloutre ✓');return;}
+  if(e.target.closest('[data-unpublish]')){getBook(state.bookId).status='done';render();toast('Livre dépublié.');return;}
+  if(e.target.closest('#addChap'))return addChap();
+  const delc=e.target.closest('[data-delchap]');if(delc)return delChap(delc.dataset.delchap);
+  if(e.target.closest('#addChar'))return addChar();
+  const ec=e.target.closest('[data-editchar]');if(ec)return editChar(+ec.dataset.editchar);
+  const dc=e.target.closest('[data-delchar]');if(dc)return delChar(+dc.dataset.delchar);
+  if(e.target.closest('#saveSheet'))return saveSheet();
+  if(e.target.closest('[data-delcover]')){getBook(state.bookId).coverImg=null;render();return;}
+  if(e.target.closest('#toggleRead'))return toggleRead();
+  if(e.target.closest('[data-pubchap]'))return togglePubChap();
+  const di=e.target.closest('[data-delimg]');if(di)return delImg(+di.dataset.delimg);
+  const nav=e.target.closest('[data-nav]');if(nav)return navChap(nav.dataset.nav);
+  if(e.target.closest('#askBiblou'))return openBiblou();
+
+  /* biblou */
+  if(e.target.closest('#bbClose')||e.target.id==='scrim')return closeBiblou();
+  if(e.target.closest('#attachBtn')){state.bb.pickerOpen=!state.bb.pickerOpen;$('#picker').classList.toggle('hidden',!state.bb.pickerOpen);return;}
+  if(e.target.closest('[data-rmattach]')){state.bb.attached=null;renderAttach();return;}
+  const ps=e.target.closest('#pSrcs button');if(ps){state.bb.src=ps.dataset.src;syncPicker();return;}
+  if(e.target.closest('#pAdd')){const{t,l}=pickerText();if(!t.trim()){toast('Aucun texte à joindre.');return;}setAttached(t,l);state.bb.pickerOpen=false;$('#picker').classList.add('hidden');return;}
+  const q=e.target.closest('#quick button');if(q)return sendBiblou(q.dataset.q);
+  if(e.target.closest('#bbSend'))return sendBiblou();
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='searchInput'){state.search=e.target.value;$('#screen').innerHTML=search();const i=$('#searchInput');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='coverInput'&&e.target.files[0]){const r=new FileReader();r.onload=()=>{getBook(state.bookId).coverImg=r.result;render();toast('Couverture importée.');};r.readAsDataURL(e.target.files[0]);}
+  if(e.target.id==='chImgInput'&&e.target.files.length){const b=getBook(state.bookId),c=b.chapters.find(x=>x.id===state.chapterId);[...e.target.files].forEach(f=>{const r=new FileReader();r.onload=()=>{c.images.push(r.result);render();bindEditor();};r.readAsDataURL(f);});toast('Image(s) importée(s).');}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if($('#mscrim').classList.contains('open'))return closeModal();if(state.bb.open)return closeBiblou();}
+  if(e.key==='Enter'&&!e.shiftKey&&e.target.id==='bbText'){e.preventDefault();sendBiblou();}
+});
+
+/* ---------- actions ---------- */
+function newBook(){
+  modal('Nouveau livre',[{key:'title',label:'Titre',value:'Mon nouveau livre'},{key:'genre',type:'select',label:'Genre',options:GENRES,value:'Roman'}],v=>{
+    if(!v.title)return;const id='b'+Date.now();
+    state.books.unshift({id,title:v.title,author:'Vous',status:'draft',genre:v.genre,cover:pickColor(),coverImg:null,emoji:'📖',summary:'',characters:[],chapters:[{id:'c1',title:'Chapitre 1',published:false,images:[],content:''}]});
+    state.tab='chapters';go('book',{bookId:id});toast('Livre créé.');
+  },'Créer');
+}
+function addChap(){
+  const b=getBook(state.bookId);
+  modal('Nouveau chapitre',[{key:'title',label:'Titre du chapitre',value:'Chapitre '+(b.chapters.length+1)}],v=>{
+    b.chapters.push({id:'c'+Date.now(),title:v.title||'Chapitre '+(b.chapters.length+1),published:false,images:[],content:''});render();toast('Chapitre ajouté.');
+  },'Ajouter');
+}
+function delChap(id){
+  const b=getBook(state.bookId),c=b.chapters.find(x=>x.id===id);
+  modal('Supprimer le chapitre',[{type:'message',label:`Supprimer « ${c.title} » ? Cette action est définitive.`}],()=>{
+    b.chapters=b.chapters.filter(x=>x.id!==id);if(state.chapterId===id)state.chapterId=b.chapters[0]?.id||null;render();toast('Chapitre supprimé.');
+  },'Supprimer');
+}
+function addChar(){
+  const b=getBook(state.bookId);
+  modal('Nouveau personnage',[{key:'name',label:'Nom'},{key:'role',type:'select',label:'Rôle',options:['principal','secondaire'],value:'secondaire'},{key:'desc',type:'textarea',label:'Description'}],v=>{
+    if(!v.name)return;b.characters.push({name:v.name,role:v.role,desc:v.desc});render();toast('Personnage ajouté.');
+  },'Ajouter');
+}
+function editChar(i){
+  const b=getBook(state.bookId),c=b.characters[i];
+  modal('Modifier le personnage',[{key:'name',label:'Nom',value:c.name},{key:'role',type:'select',label:'Rôle',options:['principal','secondaire'],value:c.role},{key:'desc',type:'textarea',label:'Description',value:c.desc}],v=>{
+    b.characters[i]={name:v.name||c.name,role:v.role,desc:v.desc};render();toast('Personnage modifié.');
+  },'Enregistrer');
+}
+function delChar(i){
+  const b=getBook(state.bookId),c=b.characters[i];
+  modal('Supprimer le personnage',[{type:'message',label:`Supprimer « ${c.name} » ?`}],()=>{b.characters.splice(i,1);render();toast('Personnage supprimé.');},'Supprimer');
+}
+function saveSheet(){
+  const b=getBook(state.bookId);
+  b.title=$('[data-sh="title"]').value.trim()||b.title;
+  b.genre=$('[data-sh="genre"]').value;
+  b.summary=$('[data-sh="summary"]').value;
+  b.emoji=$('[data-sh="emoji"]').value||'📖';
+  render();toast('Fiche enregistrée.');
+}
+function toggleRead(){const id=state.bookId,i=state.reading.indexOf(id);if(i>=0)state.reading.splice(i,1);else state.reading.push(id);render();}
+function togglePubChap(){const b=getBook(state.bookId),c=b.chapters.find(x=>x.id===state.chapterId);c.published=!c.published;render();bindEditor();toast(c.published?'Chapitre publié.':'Chapitre dépublié.');}
+function delImg(i){const b=getBook(state.bookId),c=b.chapters.find(x=>x.id===state.chapterId);c.images.splice(i,1);render();bindEditor();}
+function navChap(dir){const b=getBook(state.bookId);let idx=b.chapters.findIndex(x=>x.id===state.chapterId);idx+=dir==='next'?1:-1;if(idx<0||idx>=b.chapters.length)return;go('editor',{chapterId:b.chapters[idx].id});}
+
+$('#bbLogo').src=LOGO;
+go('accueil');
+</script>
+</body>
+</html>
